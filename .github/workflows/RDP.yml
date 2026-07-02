@@ -1,0 +1,31 @@
+name: Chrome Remote Desktop (Free GUI)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Установка Chrome Remote Desktop
+      run: |
+        $msiPath = "$env:TEMP\chromeremotedesktophost.msi"
+        Invoke-WebRequest -Uri "https://google.com" -OutFile $msiPath
+        Start-Process msiexec.exe -ArgumentList "/i $msiPath /qn /norestart" -Wait
+
+    - name: Авторизация и запуск сессии
+      env:
+        CRD_CMD: ${{ secrets.CRD_CMD }}
+      run: |
+        if (-not $env:CRD_CMD) {
+          Write-Error "Критическая ошибка: Вы забыли добавить секрет CRD_CMD на GitHub!"
+          exit 1
+        }
+        # Запуск строки авторизации от Google
+        Invoke-Expression $env:CRD_CMD
+
+    - name: Удержание сессии (6 часов)
+      run: |
+        Write-Host "Подключение готово! Проверьте список устройств на сайте Google."
+        Start-Sleep -Seconds 21600
